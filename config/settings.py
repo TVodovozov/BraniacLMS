@@ -113,6 +113,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 AUTH_USER_MODEL = "authapp.CustomUser"
 
+AUTHENTICATION_BACKENDS = (
+    "social_core.backends.github.GithubOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+)
+
 LOGIN_REDIRECT_URL = "mainapp:main_page"
 LOGOUT_REDIRECT_URL = "mainapp:main_page"
 
@@ -146,10 +151,6 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-AUTHENTICATION_BACKENDS = (
-    "social_core.backends.github.GithubOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
-)
 
 SOCIAL_AUTH_GITHUB_KEY = "d8201a66cd42d8c7df44"
-SOCIAL_AUTH_GITHUB_SECRET = "12cf89b73864301637749d48cbc651a270cf324"
+SOCIAL_AUTH_GITHUB_SECRET = "069bc73a90b6cdf22379d03b10aedb157d465710"
