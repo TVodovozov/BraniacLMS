@@ -1,91 +1,87 @@
+from pathlib import Path
+from time import time
+
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin, UserManager
+from django.contrib.auth.validators import ASCIIUsernameValidator
+from django.core.mail import send_mail
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
-class News(models.Model):
-    title = models.CharField(max_length=256, verbose_name="Title")
-    preambule = models.CharField(max_length=1024, verbose_name="Preambule")
-    body = models.TextField(blank=True, null=True, verbose_name="Body")
-    body_as_markdown = models.BooleanField(default=False, verbose_name="As markdown")
-    created = models.DateTimeField(auto_now_add=True, verbose_name="Created", editable=False)
-    updated = models.DateTimeField(auto_now=True, verbose_name="Edited", editable=False)
-    deleted = models.BooleanField(default=False)
-
-    def __str__(self) -> str:
-        return f"{self.pk} {self.title}"
-
-    def delete(self, *args):
-        self.deleted = True
-        self.save()
-
-    class Meta:
-        verbose_name = _("News")
-        verbose_name_plural = _("News")
-        ordering = ("-created",)
+def users_avatars_path(instance, filename):
+    # file will be uploaded to
+    #   MEDIA_ROOT / user_<username> / avatars / <filename>
+    num = int(time() * 1000)
+    suff = Path(filename).suffix
+    return "user_{0}/avatars/{1}".format(instance.username, f"pic_{num}{suff}")
 
 
-class CoursesManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(deleted=False)
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+    username_validator = ASCIIUsernameValidator()
 
+    username = models.CharField(
+        _("username"),
+        max_length=150,
+        unique=True,
+        help_text=_("Required. 150 characters or fewer. ASCII letters and digits only."),
+        validators=[username_validator],
+        error_messages={
+            "unique": _("A user with that username already exists."),
+        },
+    )
+    first_name = models.CharField(_("first name"), max_length=150, blank=True)
+    last_name = models.CharField(_("last name"), max_length=150, blank=True)
+    age = models.PositiveIntegerField(blank=True, null=True)
+    avatar = models.ImageField(upload_to=users_avatars_path, blank=True, null=True)
+    email = models.CharField(
+        _("email address"),
+        max_length=256,
+        unique=True,
+        error_messages={
+            "unique": _("A user with that email address already exists."),
+        },
+    )
+    is_staff = models.BooleanField(
+        _("staff status"),
+        default=False,
+        help_text=_("Designates whether the user can log into this admin site."),
+    )
+    is_active = models.BooleanField(
+        _("active"),
+        default=True,
+        help_text=_(
+            "Designates whether this user should be treated as active. \
+            Unselect this instead of deleting accounts."
+        ),
+    )
+    date_joined = models.DateTimeField(_("date joined"), auto_now_add=True)
 
-class Courses(models.Model):
-    objects = CoursesManager()
+    objects = UserManager()
 
-    name = models.CharField(max_length=256, verbose_name="Name")
-    description = models.TextField(verbose_name="Description", blank=True, null=True)
-    description_as_markdown = models.BooleanField(verbose_name="As markdown", default=False)
-    cost = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Cost", default=0)
-    cover = models.CharField(max_length=25, default="no_image.svg", verbose_name="Cover")
-    created = models.DateTimeField(auto_now_add=True, verbose_name="Created")
-    updated = models.DateTimeField(auto_now=True, verbose_name="Edited")
-    deleted = models.BooleanField(default=False)
-
-    def __str__(self) -> str:
-        return f"{self.pk} {self.name}"
-
-    def delete(self, *args):
-        self.deleted = True
-        self.save()
-
-
-class Lesson(models.Model):
-    course = models.ForeignKey(Courses, on_delete=models.CASCADE)
-    num = models.PositiveIntegerField(verbose_name="Lesson number")
-    title = models.CharField(max_length=256, verbose_name="Name")
-    description = models.TextField(verbose_name="Description", blank=True, null=True)
-    description_as_markdown = models.BooleanField(verbose_name="As markdown", default=False)
-    created = models.DateTimeField(auto_now_add=True, verbose_name="Created", editable=False)
-    updated = models.DateTimeField(auto_now=True, verbose_name="Edited", editable=False)
-    deleted = models.BooleanField(default=False)
-
-    def __str__(self) -> str:
-        return f"{self.course.name} | {self.num} | {self.title}"
-
-    def delete(self, *args):
-        self.deleted = True
-        self.save()
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
 
     class Meta:
-        ordering = ("course", "num")
-        verbose_name = _("Lesson")
-        verbose_name_plural = _("Lessons")
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
 
+    def clean(self):
+        super().clean()
+        self.email = self.__class__.objects.normalize_email(self.email)
 
-class CourseTeachers(models.Model):
-    course = models.ManyToManyField(Courses)
-    name_first = models.CharField(max_length=128, verbose_name="Name")
-    name_second = models.CharField(max_length=128, verbose_name="Surname")
-    day_birth = models.DateField(verbose_name="Birth date")
-    deleted = models.BooleanField(default=False)
+    def get_full_name(self):
+        """
+        Return the first_name plus the last_name, with a space in between.
+        """
+        full_name = "%s %s" % (self.first_name, self.last_name)
+        return full_name.strip()
 
-    def __str__(self) -> str:
-        return "{0:0>3} {1} {2}".format(self.pk, self.name_second, self.name_first)
+    def get_short_name(self):
+        """Return the short name for the user."""
+        return self.first_name
 
-    def delete(self, *args):
-        self.deleted = True
-        self.save()
-
-    class Meta:
-        verbose_name = _("Teacher")
-        verbose_name_plural = _("Teachers")
+    def email_user(self, subject, message, from_email=None, **kwargs):
+        """Send an email to this user."""
+        send_mail(subject, message, from_email, [self.email], **kwargs)
