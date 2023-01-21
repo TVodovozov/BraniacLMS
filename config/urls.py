@@ -1,16 +1,17 @@
-from django.conf import settings
-from django.conf.urls.static import static
-from django.contrib import admin
-from django.urls import include, path
-from django.views.generic import RedirectView
+from django.urls import path
+
+from authapp import views
+from authapp.apps import AuthappConfig
+
+app_name = AuthappConfig.name
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", RedirectView.as_view(url="mainapp/")),
-    path("social_auth/", include("social_django.urls", namespace="social")),
-    path("mainapp/", include("mainapp.urls", namespace="mainapp")),
-    path("authapp/", include("authapp.urls", namespace="authapp")),
+    path("login/", views.CustomLoginView.as_view(), name="login"),
+    path("logout/", views.CustomLogoutView.as_view(), name="logout"),
+    path("register/", views.RegisterView.as_view(), name="register"),
+    path(
+        "profile_edit/<int:pk>/",
+        views.ProfileEditView.as_view(),
+        name="profile_edit",
+    ),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

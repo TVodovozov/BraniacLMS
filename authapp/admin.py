@@ -1,12 +1,14 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
+from authapp import models
 from mainapp import models as mainapp_models
 
 
-@admin.register(mainapp_models.News)
-class NewsAdmin(admin.ModelAdmin):
-    search_fields = ["title", "preambule", "body"]
+@admin.register(models.CustomUser)
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ["id", "username", "email", "is_active", "date_joined"]
+    ordering = ["-date_joined"]
 
 
 @admin.register(mainapp_models.Lesson)
