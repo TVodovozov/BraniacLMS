@@ -1,10 +1,22 @@
 from http import HTTPStatus
 
+from django.core import mail as django_mail
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from authapp import models as authapp_models
 from mainapp import models as mainapp_models
+from mainapp import tasks as mainapp_tasks
+
+
+class TestTaskMailSend(TestCase):
+    fixtures = ("authapp/fixtures/001_user_admin.json",)
+
+    def test_mail_send(self):
+        message_text = "test_message_text"
+        user_obj = authapp_models.CustomUser.objects.first()
+        mainapp_tasks.send_feedback_mail({"user_id": user_obj.id, "message": message_text})
+        self.assertEqual(django_mail.outbox[0].body, message_text)
 
 
 class TestNewsPage(TestCase):
@@ -166,6 +178,13 @@ class TestNewsSelenium(StaticLiveServerTestCase):
         WebDriverWait(self.selenium, 5).until(EC.visibility_of_element_located((By.CLASS_NAME, "mt-auto")))
 
     def test_create_button_clickable(self):
+        options = Options()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--headless")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920,1080")
+        driver = webdriver.Firefox(options=options, executable_path=os.getcwd() + "/geckodriver")
+
         path_list = f"{self.live_server_url}{reverse('mainapp:news')}"
         path_add = reverse("mainapp:news_create")
         self.selenium.get(path_list)
