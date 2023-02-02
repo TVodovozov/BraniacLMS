@@ -63,6 +63,7 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
+
 ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
@@ -88,6 +89,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -118,21 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-MEDIA_URL = "/media/"
-
-MEDIA_ROOT = BASE_DIR / "media"
-
 AUTH_USER_MODEL = "authapp.CustomUser"
-
-AUTHENTICATION_BACKENDS = (
-    "social_core.backends.github.GithubOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
-)
-
-LOGIN_REDIRECT_URL = "mainapp:main_page"
-LOGOUT_REDIRECT_URL = "mainapp:main_page"
-
-MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
@@ -162,9 +150,23 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+# Media files
+MEDIA_URL = "/media/"
 
-SOCIAL_AUTH_GITHUB_KEY = "d8201a66cd42d8c7df44"
-SOCIAL_AUTH_GITHUB_SECRET = "069bc73a90b6cdf22379d03b10aedb157d465710"
+MEDIA_ROOT = BASE_DIR / "media"
+
+LOGIN_REDIRECT_URL = "mainapp:main_page"
+LOGOUT_REDIRECT_URL = "mainapp:main_page"
+
+MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
+
+AUTHENTICATION_BACKENDS = (
+    "social_core.backends.github.GithubOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+)
+
+SOCIAL_AUTH_GITHUB_KEY = "6db4a8828f818ddf01e6"
+SOCIAL_AUTH_GITHUB_SECRET = "ca47085f5413ee503bec0b4c585b8a7bf8096904"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
@@ -194,7 +196,6 @@ LOGGING = {
     },
 }
 
-# In the end of file
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
